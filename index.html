@@ -1,0 +1,336 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Check, ChevronRight } from 'lucide-react';
+
+// --- カスタムフック：スクロール時のフェードイン検知 ---
+function useOnScreen(ref) {
+  const [isIntersecting, setIntersecting] = useState(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIntersecting(true);
+          // 一度表示されたら監視を解除（スクロールで戻っても消えないようにする）
+          if (ref.current) observer.unobserve(ref.current);
+        }
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -50px 0px' }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [ref]);
+  return isIntersecting;
+}
+
+// --- コンポーネント：フェードインラッパー ---
+const FadeIn = ({ children, delay = 0, className = '' }) => {
+  const ref = useRef(null);
+  const isVisible = useOnScreen(ref);
+  return (
+    <div
+      ref={ref}
+      className={`transition-all duration-1000 ease-out ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+      } ${className}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
+  );
+};
+
+// --- コンポーネント：鼓動するCTAボタン ---
+const CTAButton = ({ mainText, subText }) => (
+  <button className="relative w-full max-w-sm mx-auto block group focus:outline-none">
+    {/* 鼓動エフェクト用背景 */}
+    <div className="absolute inset-0 bg-[#E07A5F] rounded-2xl animate-pulse-soft opacity-70"></div>
+    {/* ボタン本体 */}
+    <div className="relative bg-[#E07A5F] text-white rounded-2xl py-5 px-6 flex flex-col items-center justify-center transform transition-transform duration-300 group-hover:-translate-y-1 shadow-xl">
+      <span className="font-serif font-medium text-lg tracking-wide mb-1 flex items-center gap-2">
+        {mainText} <ChevronRight size={18} />
+      </span>
+      {subText && <span className="font-sans text-xs opacity-90 tracking-wider">{subText}</span>}
+    </div>
+  </button>
+);
+
+export default function App() {
+  // グローバルなスタイル定義（フォントとキーフレームアニメーション）
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=Noto+Serif+JP:wght@400;500;600&display=swap');
+      
+      body {
+        background-color: #F5F5F3;
+        color: #1A2B3C;
+        font-family: 'Noto Sans JP', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      
+      .font-serif {
+        font-family: 'Noto Serif JP', serif;
+      }
+
+      @keyframes pulse-soft {
+        0% { box-shadow: 0 0 0 0 rgba(224, 122, 95, 0.4); }
+        50% { box-shadow: 0 0 0 15px rgba(224, 122, 95, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(224, 122, 95, 0); }
+      }
+      .animate-pulse-soft {
+        animation: pulse-soft 3s infinite ease-in-out;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[#F5F5F3] flex justify-center selection:bg-[#E07A5F] selection:text-white">
+      {/* スマホ閲覧を意識したナローカラム・コンテナ */}
+      <div className="w-full max-w-lg bg-[#F5F5F3] shadow-[0_0_40px_rgba(0,0,0,0.02)] relative pb-24">
+        
+        {/* =========================================
+            ① 【P】Problem：問題提起（ファーストビュー）
+        ========================================= */}
+        <section className="relative min-h-[90vh] flex flex-col justify-center px-6 pt-12 pb-20">
+          <FadeIn>
+            <div className="text-center mb-10">
+              <p className="font-serif text-[#E07A5F] text-sm tracking-widest mb-3">Marriage Update</p>
+              <h1 className="font-serif text-2xl md:text-3xl leading-relaxed font-medium">
+                家族のために<br/>頑張るほど、<br/>どうして「ふたり」は<br/>遠くなるのでしょう。
+              </h1>
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={300}>
+            {/* ヒーロー画像プレースホルダー */}
+            <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-12 bg-[#E8E8E6] relative shadow-inner">
+              <img 
+                src="https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&q=80&w=800" 
+                alt="暖色の照明がついた静かなリビングで、少し距離を置いて座るふたり" 
+                className="w-full h-full object-cover opacity-80 mix-blend-multiply"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#F5F5F3] to-transparent opacity-60"></div>
+            </div>
+          </FadeIn>
+
+          <div className="space-y-6 text-center font-sans text-sm md:text-base leading-loose tracking-wide opacity-80 mb-16 px-4">
+            <FadeIn delay={600}>
+              <p>「ただいま」の後に続く、重い沈黙。</p>
+            </FadeIn>
+            <FadeIn delay={800}>
+              <p>扉を開ける前、無意識についてしまう「ふぅ」という溜息。</p>
+            </FadeIn>
+            <FadeIn delay={1000}>
+              <p>かつての恋人は、今や「業務連絡」だけの同僚。</p>
+            </FadeIn>
+            <FadeIn delay={1200}>
+              <p className="font-serif text-lg mt-8 opacity-100">
+                あんなに仲が良かった私たちが、どうして。
+              </p>
+            </FadeIn>
+          </div>
+
+          <FadeIn delay={1500} className="mt-auto">
+            <CTAButton 
+              mainText="今すぐ無料で、ふたりの「現在地」を診断する" 
+            />
+          </FadeIn>
+        </section>
+
+
+        {/* =========================================
+            ② 【A】Agitation：煽り（共感と危機感）
+        ========================================= */}
+        <section className="px-6 py-24 bg-white/40">
+          <FadeIn>
+            <h2 className="font-serif text-xl md:text-2xl text-center leading-relaxed font-medium mb-12">
+              このまま「本音」を<br/>飲み込み続けて、<br/>10年後も笑えていますか？
+            </h2>
+          </FadeIn>
+
+          <FadeIn delay={200}>
+            <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-[#E8E8E6] mb-16">
+              <ul className="space-y-6">
+                {[
+                  "相手が何をしていても、もう興味が持てない",
+                  "怒るエネルギーすらもったいなくて、黙る方を選んでしまう",
+                  "同じベッドにいるのに、心が何百キロも離れている気がする",
+                  "幸せそうな他人のSNSを見て、胸がキュッとなる"
+                ].map((text, idx) => (
+                  <li key={idx} className="flex items-start gap-4">
+                    <div className="mt-1 flex-shrink-0 w-5 h-5 rounded-full bg-[#F5F5F3] flex items-center justify-center text-[#E07A5F]">
+                      <Check size={14} strokeWidth={3} />
+                    </div>
+                    <span className="font-sans text-sm md:text-base leading-relaxed opacity-80">{text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </FadeIn>
+
+          <div className="space-y-8 font-serif leading-loose text-center px-4">
+            <FadeIn delay={400}>
+              <p className="text-lg">ズレを放置した時間は、やがて修復不可能な<br/>「冷たい氷山」へと変わります。</p>
+            </FadeIn>
+            <FadeIn delay={600}>
+              <p className="opacity-80">子供たちが巣立った後、広い家に残された二人が、<br/>お互いに見知らぬ他人のようになっている未来。</p>
+            </FadeIn>
+            <FadeIn delay={800}>
+              <p className="text-lg font-medium">そんな結末を、<br/>あなたは望んでいなかったはずです。</p>
+            </FadeIn>
+          </div>
+        </section>
+
+
+        {/* =========================================
+            ③ 【S】Solution：解決策（納得とAIの提示）
+        ========================================= */}
+        <section className="px-6 py-32 relative">
+          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-white/40 to-transparent"></div>
+          
+          <div className="text-center space-y-8 mb-20">
+            <FadeIn>
+              <h2 className="font-serif text-xl md:text-2xl leading-relaxed font-medium">
+                それは「愛情」が<br/>消えたからではありません。
+              </h2>
+            </FadeIn>
+            <FadeIn delay={200}>
+              <p className="font-sans text-base opacity-80">ふたりの「伝え方」が、<br/>今の生活に合わなくなっているだけ。</p>
+            </FadeIn>
+          </div>
+
+          <div className="space-y-6 text-center font-sans text-sm md:text-base leading-relaxed opacity-80 mb-20 px-4">
+            <FadeIn delay={400}>
+              <p>もう、自分を責めないでください。</p>
+            </FadeIn>
+            <FadeIn delay={600}>
+              <p>あなたが悪いのでも、相手が悪いのでもありません。</p>
+            </FadeIn>
+            <FadeIn delay={800}>
+              <p>ただ、ふたりの間に溜まった「見えない不満」を可視化し、<br/>整える方法を知らなかっただけなのです。</p>
+            </FadeIn>
+          </div>
+
+          <FadeIn delay={1000}>
+            <div className="bg-[#1A2B3C] text-[#F5F5F3] rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-[#E07A5F] rounded-full blur-[80px] opacity-20 -mr-10 -mt-10"></div>
+              
+              <p className="font-serif text-[#E07A5F] text-xs tracking-widest text-center mb-4">SOLUTION</p>
+              <h3 className="font-serif text-2xl text-center font-medium mb-8">Marriage Update<br/><span className="text-sm font-sans font-light opacity-80 mt-2 block">マリッジ・アップデート</span></h3>
+              
+              <p className="font-sans text-sm leading-relaxed mb-10 opacity-90 text-center">
+                最新のAIが、あなたの言い出せない本音をすくい上げ、ふたりの関係を「12のタイプ」に分類。<br/><br/>
+                今のふたりが「どこでボタンを掛け違っているのか」を客観的に導き出します。
+              </p>
+
+              {/* レーダーチャート画像プレースホルダー（CSSで簡易的に描画） */}
+              <div className="w-full aspect-square bg-[#F5F5F3]/5 rounded-2xl border border-white/10 flex items-center justify-center relative p-6">
+                <div className="absolute inset-0 flex items-center justify-center opacity-30">
+                  {/* レーダーチャートの背景線 */}
+                  <svg viewBox="0 0 100 100" className="w-full h-full stroke-white/40 fill-none">
+                    <polygon points="50,10 90,30 90,70 50,90 10,70 10,30" strokeWidth="0.5"/>
+                    <polygon points="50,25 75,40 75,60 50,75 25,60 25,40" strokeWidth="0.5"/>
+                    <polygon points="50,40 60,47 60,53 50,60 40,53 40,47" strokeWidth="0.5"/>
+                    <line x1="50" y1="50" x2="50" y2="10" strokeWidth="0.5"/>
+                    <line x1="50" y1="50" x2="90" y2="30" strokeWidth="0.5"/>
+                    <line x1="50" y1="50" x2="90" y2="70" strokeWidth="0.5"/>
+                    <line x1="50" y1="50" x2="50" y2="90" strokeWidth="0.5"/>
+                    <line x1="50" y1="50" x2="10" y2="70" strokeWidth="0.5"/>
+                    <line x1="50" y1="50" x2="10" y2="30" strokeWidth="0.5"/>
+                  </svg>
+                </div>
+                {/* データのポリゴン */}
+                <svg viewBox="0 0 100 100" className="w-full h-full absolute inset-0">
+                   <polygon points="50,30 80,45 65,70 50,60 30,55 25,35" className="fill-[#E07A5F]/40 stroke-[#E07A5F] stroke-[1] transition-all duration-1000"/>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-[10px] font-sans text-white/60 tracking-widest">[Image: クリーンで精密なレーダーチャート]</span>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+        </section>
+
+
+        {/* =========================================
+            ④ 【O】Offer：提案（行動喚起）
+        ========================================= */}
+        <section className="px-6 py-20 bg-white/60">
+          <FadeIn>
+            <h2 className="font-serif text-2xl md:text-3xl text-center leading-relaxed font-medium mb-16">
+              3分で、<br/>ふたりの未来を書き換える。
+            </h2>
+          </FadeIn>
+
+          <div className="space-y-4 mb-20">
+            <FadeIn delay={200}>
+              <div className="bg-[#F5F5F3] rounded-xl p-5 flex items-center gap-4">
+                <span className="text-[#E07A5F] font-serif italic text-xl">01</span>
+                <p className="font-sans text-sm font-medium">「察してほしい」という苦しさから解放されます</p>
+              </div>
+            </FadeIn>
+            <FadeIn delay={300}>
+              <div className="bg-[#F5F5F3] rounded-xl p-5 flex items-center gap-4">
+                <span className="text-[#E07A5F] font-serif italic text-xl">02</span>
+                <p className="font-sans text-sm font-medium">帰り道、ドアを開ける前の「ため息」が消えます</p>
+              </div>
+            </FadeIn>
+            <FadeIn delay={400}>
+              <div className="bg-[#F5F5F3] rounded-xl p-5 flex items-center gap-4">
+                <span className="text-[#E07A5F] font-serif italic text-xl">03</span>
+                <p className="font-sans text-sm font-medium">パパとママが自然に笑い合う、最高の家庭環境が戻ります</p>
+              </div>
+            </FadeIn>
+            <FadeIn delay={500}>
+              <div className="bg-[#F5F5F3] rounded-xl p-5 flex items-center gap-4">
+                <span className="text-[#E07A5F] font-serif italic text-xl">04</span>
+                <p className="font-sans text-sm font-medium">5年後、10年後の未来が、楽しみなものに変わります</p>
+              </div>
+            </FadeIn>
+          </div>
+
+          <FadeIn delay={700}>
+            <div className="text-center font-sans">
+              <h4 className="font-serif text-lg mb-6 text-[#1A2B3C]">Step</h4>
+              <p className="text-sm leading-loose opacity-80">
+                15の質問に、直感で答えるだけ。<br/>
+                AIがふたりの「本当の状態」を特定します。<br/><br/>
+                診断後、今日からすぐに使える<br/>
+                <span className="font-medium text-[#E07A5F]">「ふたりの距離を縮める具体的な方法」</span><br/>
+                をお渡しします。
+              </p>
+            </div>
+          </FadeIn>
+        </section>
+
+
+        {/* =========================================
+            ⑤ 【CTA】クロージング
+        ========================================= */}
+        <section className="px-6 pt-32 pb-40 text-center relative">
+          <FadeIn>
+            <h2 className="font-serif text-2xl md:text-3xl leading-relaxed font-medium mb-10">
+              氷山が崩れてしまう、<br/>その前に。
+            </h2>
+          </FadeIn>
+
+          <FadeIn delay={200}>
+            <p className="font-sans text-sm md:text-base leading-loose opacity-80 mb-16">
+              手遅れになる前に、”今”の状態を知るだけで、<br/>今後の人生は大きく変わります。<br/><br/>
+              きっかけは、今ここにあります。
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={500}>
+            <CTAButton 
+              mainText="無料でふたりの状態を可視化する" 
+              subText="3分で完了｜手遅れになる前に、今すぐ現在地を知ろう"
+            />
+          </FadeIn>
+        </section>
+
+      </div>
+    </div>
+  );
+}
